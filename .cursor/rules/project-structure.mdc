@@ -1,0 +1,39 @@
+---
+alwaysApply: true
+---
+
+# Project Structure & Routing Rules
+
+## Monorepo Architecture
+This is a Turborepo monorepo with:
+- `apps/core/` - Back office portal (React + Vite)
+- `apps/dealer/` - Dealer portal (React + Vite) 
+- `apps/server/` - Backend API (NestJS + Prisma + PostgreSQL)
+- `packages/` - Shared packages (UI components, hooks, utilities, configs)
+
+## URL-to-Folder Mapping (File-based Routing)
+Follow these exact patterns:
+- `/user` → `user/page.tsx`
+- `/user/:user_id` → `user/[user_id]/page.tsx` 
+- `/user/:user_id/profile` → `user/[user_id]/profile/page.tsx`
+
+## Feature Folder Blueprint
+Every feature follows this structure:
+```
+feature/
+  _hooks/         ← remote data & mutations
+  _contents/      ← presentational components only
+  schemas.ts      ← Zod schema + exported TS types
+  page.tsx        ← route entry point
+```
+
+## Underscore Prefix Rule
+- **Use `_` prefix**: Only for directories that are NOT pages/routes (`_hooks/`, `_contents/`)
+- **No `_` prefix**: For route directories (`feature/`, `[param]/`, `nested-route/`)
+
+## Required Files
+- Every route MUST have a `page.tsx` file as entry point
+- Every folder MUST have an `index.ts` barrel file for exports
+- Every feature MUST have a `schemas.ts` file for type definitions
+
+Reference: [docs/ruleset.md](mdc:docs/ruleset.md)

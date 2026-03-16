@@ -1,0 +1,280 @@
+---
+description: Complete CRUD feature implementation pattern with tables and modals
+---
+
+# Feature Implementation Pattern (CRUD Tables + Modals)
+
+## Complete Feature Structure
+```
+feature/
+  _hooks/
+    useEntityListDataQuery.ts     ← List query hook
+    useEntityUpdateCreation.tsx   ← Modal hook with mutations
+    index.ts                      ← Barrel exports
+  _contents/                      ← Optional presentational components
+  schemas.ts                      ← Zod schemas + types
+  page.tsx                        ← Route entry point
+  index.ts                        ← Feature barrel exports
+```
+
+## 1. Schema Definition (`schemas.ts`)
+```ts
+export const entitySchema = z.object({
+  id: z.string().max(20),
+  name: z.string().max(15),
+  created_date: z.date().transform(formatDate),
+  status: z.union([z.literal("ACTIVE"), z.literal("INACTIVE")]),
+});
+
+export const entityFormSchema = z.object({
+  name: z.string().min(1, "Name is required").max(15),
+  email: z.string().email("Invalid email address").max(30),
+  status: z.union([z.literal("ACTIVE"), z.literal("INACTIVE")]),
+});
+
+export type Entity = z.infer<typeof entitySchema>;
+export type EntityForm = z.infer<typeof entityFormSchema>;
+```
+
+## 2. List Query Hook (`_hooks/useEntityListDataQuery.ts`)
+```ts
+const QUERY_KEY = ["ENTITY_LIST"];
+
+const getEntities = (filter: any) => {
+  return mockApi.get({
+    dataSchema: z.array(entitySchema),
+    type: "paginatedList",
+  });
+};
+
+const useEntityListDataQuery = (filter = {}) => {
+  return useQuery({
+    queryKey: [...QUERY_KEY, filter],
+    queryFn: () => getEntities(removeEmpty(filter)),
+    select: (res) => res.data,
+    placeholderData: keepPreviousData,
+  });
+};
+
+export const invalidateEntityListQuery = () => {
+  return queryClient.invalidateQueries({
+    queryKey: QUERY_KEY,
+  });
+};
+
+export default useEntityListDataQuery;
+```
+
+## 3. Modal Hook (`_hooks/useEntityUpdateCreation.tsx`)
+```tsx
+const MUTATION_KEY = ["ENTITY_UPDATE_CREATION"];
+
+const createEntity = async (payload: EntityForm) => {
+  return mockApi.post({
+    dataSchema: entitySchema,
+    type: "data",
+  });
+};
+
+const updateEntity = async ({ id, ...payload }: EntityForm & { id: string }) => {
+  return mockApi.put({
+    dataSchema: entitySchema,
+    type: "data",
+  });
+};
+
+const { forwardFormContext, TextInput, SelectInput } = createForm({
+  zodSchema: entityFormSchema,
+});
+
+const EntityModal = forwardFormContext(
+  ({ onClose, onSubmit, isLoading, initialValues }, ctx) => {
+    const isEditing = !!initialValues;
+    
+    return (
+      <Modal onClose={onClose} title={isEditing ? "Edit Entity" : "Add Entity"}>
+        <form onSubmit={ctx.handleSubmit(onSubmit)}>
+          <Stack>
+            <TextInput name="name" label="Name" placeholder="Enter name" />
+            <SelectInput
+              name="status"
+              label="Status"
+              options={[
+                { label: "Active", value: "ACTIVE" },
+                { label: "Inactive", value: "INACTIVE" },
+              ]}
+            />
+          </Stack>
+          
+          <Stack horizontal gap={12} justify="end" className="mt-mds-24">
+            <Button intent="default" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" intent="primary" loading={isLoading}>
+              {isEditing ? "Update" : "Create"}
+            </Button>
+          </Stack>
+        </form>
+      </Modal>
+    );
+  }
+);
+
+const useEntityUpdateCreation = () => {
+  const { mutate: createEntity, isPending: isCreating } = useMutation({
+    mutationKey: [...MUTATION_KEY, "CREATE"],
+    mutationFn: createEntity,
+  });
+
+  const { mutate: updateEntity, isPending: isUpdating } = useMutation({
+    mutationKey: [...MUTATION_KEY, "UPDATE"],
+    mutationFn: updateEntity,
+  });
+
+  const createOverlay = useCreateOverlay({ 
+    isPending: isCreating || isUpdating 
+  });
+
+  const openCreateEntityModal = useCallback(() => {
+    createOverlay({
+      component: ({ close, state: { isPending } }) => (
+        <EntityModal
+          onClose={close}
+          onSubmit={(payload) =>
+            createEntity(payload, {
+              onSuccess: () => {
+                close();
+                invalidateEntityListQuery();
+              },
+            })
+          }
+          isLoading={isPending}
+        />
+      ),
+    });
+  }, [createOverlay, createEntity]);
+
+  const openUpdateEntityModal = useCallback((entity: Entity) => {
+    createOverlay({
+      component: ({ close, state: { isPending } }) => (
+        <EntityModal
+          onClose={close}
+          initialValues={entity}
+          onSubmit={(payload) =>
+            updateEntity({ id: entity.id, ...payload }, {
+              onSuccess: () => {
+                close();
+                invalidateEntityListQuery();
+              },
+            })
+          }
+          isLoading={isPending}
+        />
+      ),
+    });
+  }, [createOverlay, updateEntity]);
+
+  return { openCreateEntityModal, openUpdateEntityModal };
+};
+
+export default useEntityUpdateCreation;
+```
+
+## 4. Page Implementation (`page.tsx`)
+```tsx
+const EntityPage = () => {
+  const [filter, setFilter] = useState({});
+  const { data, isLoading } = useEntityListDataQuery(filter);
+  const { openCreateEntityModal, openUpdateEntityModal } = useEntityUpdateCreation();
+
+  const MAP_STATUS_BADGE_INTENT = {
+    ACTIVE: "success",
+    INACTIVE: "default",
+  } as const;
+
+  return (
+    <>
+      <Breadcrumb label="Entities" />
+      <PageWrapper>
+        <Stack className="h-full flex flex-col space-y-4">
+          <ModuleHeader
+            title="Entities"
+            subtitle="Manage your entities"
+            actionElements={[
+              <Button intent="primary" onClick={openCreateEntityModal}>
+                Add New Entity
+              </Button>,
+            ]}
+          />
+
+          <Table isLoading={isLoading} data={data?.data || []}>
+            {({ Column }) => (
+              <>
+                <Column name="name" label="Name" />
+                <Column
+                  name="status"
+                  label="Status"
+                  render={(row) => (
+                    <Badge intent={MAP_STATUS_BADGE_INTENT[row.status]}>
+                      {row.status}
+                    </Badge>
+                  )}
+                />
+                <Column name="created_date" label="Created Date" />
+                <Column
+                  name="id"
+                  label="Actions"
+                  render={(row) => (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openUpdateEntityModal(row)}
+                    >
+                      Edit
+                    </Button>
+                  )}
+                />
+              </>
+            )}
+          </Table>
+
+          <Pagination
+            data={data?.meta}
+            onChange={(page) => setFilter((prev) => ({ ...prev, page }))}
+          />
+        </Stack>
+      </PageWrapper>
+    </>
+  );
+};
+
+export default EntityPage;
+```
+
+## 5. Barrel Exports (`index.ts`)
+```ts
+export { default } from "./page";
+export * from "./schemas";
+export * from "./_hooks";
+```
+
+## Naming Conventions
+| Concern | Pattern | Example |
+|---------|---------|---------|
+| List Query Hook | `use<Entity>ListDataQuery` | `useUserListDataQuery` |
+| Modal Hook | `use<Entity>UpdateCreation` | `useUserUpdateCreation` |
+| Special Modal Hook | `use<Entity>InviteModal` | `useMemberInviteModal` |
+| Mutation Key | `["<ENTITY>_UPDATE_CREATION"]` | `["USER_UPDATE_CREATION"]` |
+| Query Key | `["<ENTITY>_LIST"]` | `["USER_LIST"]` |
+
+## Quality Checklist
+- [ ] Schemas defined with proper validation
+- [ ] List query hook with invalidation helper
+- [ ] Modal hook with create/update mutations
+- [ ] Page wrapped with `PageWrapper` and `Breadcrumb`
+- [ ] Table with proper column definitions and badges
+- [ ] Pagination integrated with filter state
+- [ ] All hooks barrel-exported
+- [ ] Linting errors resolved
+
+Reference: [docs/ruleset.md](mdc:docs/ruleset.md)

@@ -1,0 +1,40 @@
+---
+description: Error handling, security, and access control patterns
+---
+
+# Error Handling & Security
+
+## Error Handling
+- All HTTP errors flow through Axios interceptor in `QueryProvider.tsx`
+- UI components rarely call `toast` directly
+- Use debounced toasts for repeated errors: `debounce(toast.error, 250)`
+- For 422 validation errors, reuse `use422FormErrorSetter` helper
+- Global error interceptor sends errors to `react-toastify`
+
+## Axios Configuration
+Centralized in `QueryProvider.tsx`:
+- `baseURL`, `Content-Type` header
+- Auth header injection
+- Global error interceptor → `react-toastify`
+
+## Access Control
+- Use `useAccessControls()` hook; never hard-code role checks in components
+- Gate buttons/actions with permission checks:
+```ts
+if (canWrite('permission_code')) { 
+  // render action
+}
+```
+
+## Security Best Practices
+- Tokens stored in `localStorage` key `_token`
+- Expired/invalid tokens redirect to `/logout` (see interceptor)
+- Never interpolate user input into URLs; pass via `params` or `query-string`
+- All endpoints require accompanying Zod schema validation
+
+## State Management
+- Prefer `useState`/`useReducer` locally; avoid global state libraries
+- Derive UI state from TanStack Query where possible
+- TanStack Query is single source of server state; no bare Axios calls in components
+
+Reference: [docs/ruleset.md](mdc:docs/ruleset.md)

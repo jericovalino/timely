@@ -1,0 +1,45 @@
+---
+description: Custom hooks patterns for data management
+---
+
+# Custom Hooks Patterns
+
+## Hook File Naming
+- Hook files: `useXYZ.ts` located in `_hooks/` directories
+- Export invalidation functions for queries
+
+## Query Hooks Pattern
+```ts
+const QUERY_KEY = ['ENTITIES'];       // UPPER_SNAKE array
+const getEntities = (params) => axios.get<Entity[]>('/url', { params });
+
+const useEntityListQuery = (filter) =>
+  useQuery({
+    queryKey: [...QUERY_KEY, filter],
+    queryFn: () => getEntities(removeEmpty(filter)),
+    select: (res) => transform(res.data),
+    placeholderData: keepPreviousData,
+  });
+
+export const invalidateEntityListQuery = () =>
+  queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+```
+
+## Mutation Hooks Pattern
+```ts
+const MUTATION_KEY = ['CREATE_ENTITY'];
+
+const createEntity = (payload) => axios.post('/url', payload);
+
+const useCreateEntityMutation = () =>
+  useMutation({ mutationKey: MUTATION_KEY, mutationFn: createEntity });
+```
+
+## Best Practices
+- Use `transformX` utilities to normalize server payloads
+- Keep side-effects (toasts, navigation) inside hook wrappers rather than components
+- TanStack Query is the single source of server state
+- All endpoints require accompanying Zod schema in `schemas.ts`
+- Always enable `keepPreviousData` for paginated lists
+
+Reference: [docs/ruleset.md](mdc:docs/ruleset.md)

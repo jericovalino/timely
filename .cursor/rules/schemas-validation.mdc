@@ -1,0 +1,49 @@
+---
+description: Schema definition and validation patterns using Zod
+---
+
+# Schema Definition & Validation Patterns
+
+## Schema Structure
+Every feature must have a `schemas.ts` file with:
+
+```ts
+export const entitySchema = z.object({
+  id: z.string().max(20),
+  name: z.string().max(15),
+  created_date: z.date().transform(formatDate),
+  status: z.union([z.literal("ACTIVE"), z.literal("INACTIVE")]),
+});
+
+export const entityFormSchema = z.object({
+  name: z.string().min(1, "Name is required").max(15),
+  email: z.string().email("Invalid email address").max(30),
+  status: z.union([z.literal("ACTIVE"), z.literal("INACTIVE")]),
+});
+
+export type Entity = z.infer<typeof entitySchema>;
+export type EntityForm = z.infer<typeof entityFormSchema>;
+```
+
+## Schema Guidelines
+- **Every** backend response must have a Zod schema (even simple lists)
+- Export TypeScript types immediately after schema declaration using `z.infer`
+- String length limits should approximate UI field max length
+- Use `formatDate` for date transforms in display schemas
+- Separate display schemas from form schemas when validation differs
+- Forms must reuse schemas via `zodResolver` with form libraries
+
+## Validation Patterns
+- Use union types with literals for enum-like values
+- Include validation messages for form schemas
+- Minimum length validation for required fields
+- Email validation for email fields
+- Transform functions for data formatting (dates, currency, etc.)
+
+## Best Practices
+- Keep schemas colocated with features in `schemas.ts`
+- Reuse common validation patterns across schemas
+- Use descriptive error messages for better UX
+- Export both schema and inferred types for consistency
+
+Reference: [docs/ruleset.md](mdc:docs/ruleset.md)

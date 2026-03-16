@@ -1,0 +1,471 @@
+---
+description: react-geek-form library patterns and usage
+---
+
+# react-geek-form Patterns
+
+## Overview
+
+This project uses `react-geek-form` via a custom `createForm` utility that wraps `createInstance` with pre-configured form components from `@repo/multiverse-ui`.
+
+## Core Setup
+
+### createForm Utility
+
+The `createForm` utility is defined in `packages/utilities/src/createForm.ts` and wraps `createInstance` from `react-geek-form`:
+
+```tsx
+import { createForm } from "@repo/utilities";
+
+const { forwardFormContext, TextInput, SelectInput, CheckBoxGroup } = createForm({
+  zodSchema: entityFormSchema,
+});
+```
+
+**Always import `createForm` from `@repo/utilities`, never directly from `react-geek-form`.**
+
+## Form Component Creation
+
+### Basic Pattern
+
+```tsx
+import { createForm } from "@repo/utilities";
+import { entityFormSchema } from "../schemas";
+
+const { forwardFormContext, TextInput, SelectInput } = createForm({
+  zodSchema: entityFormSchema,
+});
+
+const EntityFormModal = forwardFormContext(
+  ({ onClose, onSubmit, initialValues, isLoading }, ctx) => {
+    // Form implementation
+  }
+);
+```
+
+### Available Form Components
+
+From `createForm`, you get access to:
+- `TextInput` - Text input with label and validation
+- `PasswordInput` - Password input with label
+- `NumberInput` - Numeric input with formatting
+- `TextArea` - Multi-line text input
+- `SelectInput` - Dropdown select (supports `type="multiple"` for arrays)
+- `CheckBoxGroup` - Checkbox group for multiple selection
+- `RadioGroup` - Radio button group for exclusive selection
+- `DatePicker` - Date selection
+- `DropzoneField` - File upload with drag & drop
+- `Switch` - Toggle switch for boolean values
+- `MaskInput` - Masked input (e.g., phone numbers)
+- `PinInput` - PIN code input
+- `QuantityInput` - Quantity selector with increment/decrement
+- `YearPicker` - Year selection
+- `LogoInput` - Logo upload input
+
+### Form Context Methods
+
+The `ctx` parameter from `forwardFormContext` provides:
+
+#### `ctx.useSetDefaultValues(values)`
+Set default/initial values for the form. Use conditionally for edit forms:
+
+```tsx
+if (initialValues) {
+  ctx.useSetDefaultValues({
+    email: initialValues.email,
+    first_name: initialValues.first_name,
+    role_ids: initialValues.roles.map((role) => role.id),
+  });
+}
+```
+
+#### `ctx.handleSubmit(onSubmit, onError?)`
+Handle form submission with validation:
+
+```tsx
+<form onSubmit={ctx.handleSubmit(onSubmit, (errors) => {
+  console.log(errors);
+})}>
+```
+
+#### `ctx.setZodSchema(schema)`
+Dynamically change the form schema (useful for conditional validation):
+
+```tsx
+useEffect(() => {
+  if (initialValues) {
+    ctx.setZodSchema(userFormSchema.omit({ password: true }));
+  }
+}, [ctx, initialValues]);
+```
+
+#### `ctx.setValue(name, value)`
+Programmatically set field values:
+
+```tsx
+ctx.setValue("name", "New Value");
+ctx.setValue("member_price", [{ price: 0, tier_id: undefined }]);
+```
+
+#### `useWatch({ name: ["field1", "field2"] })`
+Watch specific fields for changes:
+
+```tsx
+const { forwardFormContext, useWatch } = createForm({ zodSchema });
+
+const [category_id] = useWatch({ name: ["category_id"] });
+```
+
+#### `useFieldArray({ name: "fieldName" })`
+Manage dynamic arrays of fields:
+
+```tsx
+const { forwardFormContext, useFieldArray } = createForm({ zodSchema });
+
+const { fields, append, remove } = useFieldArray({ name: "items" });
+
+// Use in JSX
+{fields.map((field, index) => (
+  <Stack key={field.id} horizontal>
+    <TextInput name={`items.${index}.name`} />
+    <Button onClick={() => remove(index)}>Remove</Button>
+  </Stack>
+))}
+```
+
+## Form Implementation Patterns
+
+### Modal Form Pattern
+
+```tsx
+const EntityFormModal = forwardFormContext(
+  ({ onClose, onSubmit, initialValues, isLoading }, ctx) => {
+    // Set default values for edit mode
+    if (initialValues) {
+      ctx.useSetDefaultValues({
+        ...initialValues,
+        // Transform nested data if needed
+        role_ids: initialValues.roles.map((role) => role.id),
+      });
+    }
+
+    return (
+      <Modal onClose={onClose} title={initialValues ? "Edit" : "Create"}>
+        <form onSubmit={ctx.handleSubmit(onSubmit)}>
+          <Stack gap={16}>
+            <TextInput name="name" label="Name" />
+            <SelectInput
+              name="status"
+              label="Status"
+              options={[
+                { label: "Active", value: "ACTIVE" },
+                { label: "Inactive", value: "INACTIVE" },
+              ]}
+            />
+            
+            <Stack horizontal gap={12} justify="end" className="mt-mds-24">
+              <Button intent="default" onClick={onClose} loading={isLoading}>
+                Cancel
+              </Button>
+              <Button type="submit" intent="primary" loading={isLoading}>
+                {initialValues ? "Save Changes" : "Create"}
+              </Button>
+            </Stack>
+          </Stack>
+        </form>
+      </Modal>
+    );
+  }
+);
+```
+
+### Page Form Pattern
+
+```tsx
+const AddEntity = forwardFormContext((_, ctx) => {
+  const navigate = useNavigate();
+  
+  // Set default values
+  ctx.useSetDefaultValues({
+    items: [{ name: "", quantity: 1 }],
+  });
+
+  const { fields, append, remove } = useFieldArray({ name: "items" });
+
+  return (
+    <>
+      <Breadcrumb label="Add Entity" />
+      <PageWrapper>
+        <form onSubmit={ctx.handleSubmit(onSubmit)}>
+          {/* Form fields */}
+        </form>
+      </PageWrapper>
+    </>
+  );
+});
+```
+
+## Field Types and Usage
+
+### TextInput
+```tsx
+<TextInput
+  name="email"
+  label="Email"
+  type="email"
+  placeholder="Enter email"
+  disabled={!!initialValues} // Disable in edit mode
+/>
+```
+
+### SelectInput (Single)
+```tsx
+<SelectInput
+  name="status"
+  label="Status"
+  placeholder="Select status"
+  options={[
+    { label: "Active", value: "ACTIVE" },
+    { label: "Inactive", value: "INACTIVE" },
+  ]}
+/>
+```
+
+### SelectInput (Multiple)
+```tsx
+<SelectInput
+  name="role_ids"
+  label="Select Roles"
+  type="multiple"
+  options={roleList?.map((role) => ({
+    label: role.name,
+    value: role.id,
+  })) ?? []}
+/>
+```
+
+### CheckBoxGroup
+```tsx
+<CheckBoxGroup
+  name="permissionIds"
+  label="Select Permissions"
+  className="grid grid-cols-2 gap-x-4"
+>
+  {permissionList?.map((permission) => (
+    <CheckBoxGroup.Item
+      key={permission.id}
+      value={permission.id}
+      label={permission.name}
+      description={permission.description}
+    />
+  )) ?? []}
+</CheckBoxGroup>
+```
+
+**Note:** CheckBoxGroup values are transformed. If your schema expects `z.array(z.number())`, the form library handles the transformation automatically.
+
+### DropzoneField
+```tsx
+<DropzoneField
+  name="img_url"
+  label="Upload Image"
+  api={api}
+  imageOnly={true}
+/>
+```
+
+### NumberInput
+```tsx
+<NumberInput
+  name="amount"
+  label="Amount"
+  placeholder="Enter amount"
+  min={0}
+  max={10000}
+/>
+```
+
+### TextArea
+```tsx
+<TextArea
+  name="description"
+  label="Description"
+  placeholder="Enter description"
+  rows={4}
+/>
+```
+
+## Schema Patterns
+
+### Basic Form Schema
+```tsx
+export const entityFormSchema = z.object({
+  name: z.string().min(1, "Name is required").max(50),
+  email: z.string().email("Invalid email"),
+  role_ids: z.array(z.number()).min(1, "At least one role is required"),
+});
+```
+
+### Conditional Schema Updates
+For forms that change validation based on mode (create vs edit):
+
+```tsx
+useEffect(() => {
+  if (initialValues) {
+    ctx.setZodSchema(entityFormSchema.omit({ password: true }));
+  } else {
+    ctx.setZodSchema(entityFormSchema);
+  }
+}, [ctx, initialValues]);
+```
+
+## Error Handling
+
+### 422 Form Error Handling
+
+Use `use422FormErrorSetter` for API validation errors:
+
+```tsx
+import { use422FormErrorSetter } from "@repo/hooks";
+
+const EntityFormModal = forwardFormContext(({ onClose, onSubmit }, ctx) => {
+  const { onError, setConfig } = use422FormErrorSetter();
+  
+  // Pass form context methods
+  useEffect(() => {
+    setConfig({
+      watch: ctx.watch,
+      setError: ctx.setError,
+      getValues: ctx.getValues,
+      clearErrors: ctx.clearErrors,
+    });
+  }, [ctx, setConfig]);
+
+  return (
+    <form onSubmit={ctx.handleSubmit(onSubmit)}>
+      {/* Form fields */}
+    </form>
+  );
+});
+```
+
+Or pass context directly:
+
+```tsx
+const { onError } = use422FormErrorSetter(ctx);
+```
+
+Then use in mutation:
+
+```tsx
+createEntity(payload, {
+  onSuccess: () => {
+    close();
+    invalidateEntityListQuery();
+  },
+  onError, // Handles 422 validation errors
+});
+```
+
+## Best Practices
+
+1. **Always use `createForm` from `@repo/utilities`** - Never import directly from `react-geek-form`
+
+2. **Destructure only needed components** - Only destructure what you use:
+   ```tsx
+   const { forwardFormContext, TextInput, SelectInput } = createForm({
+     zodSchema: entityFormSchema,
+   });
+   ```
+
+3. **Use conditional default values** - Set defaults only when needed:
+   ```tsx
+   if (initialValues) {
+     ctx.useSetDefaultValues({ ...initialValues });
+   }
+   ```
+
+4. **Transform nested data** - Map nested objects to form-compatible structures:
+   ```tsx
+   ctx.useSetDefaultValues({
+     role_ids: initialValues.roles.map((role) => role.id),
+   });
+   ```
+
+5. **Handle password fields** - Omit password from edit forms:
+   ```tsx
+   {!initialValues && <PasswordInput name="password" label="Password" />}
+   ```
+
+6. **Use proper field names** - Field names must match schema keys exactly
+
+7. **Type form props** - Use inferred types from schema:
+   ```tsx
+   type EntityForm = z.infer<typeof entityFormSchema>;
+   
+   onSubmit: (payload: EntityForm) => void;
+   ```
+
+8. **Handle loading states** - Pass `isLoading` to buttons:
+   ```tsx
+   <Button type="submit" loading={isLoading}>Submit</Button>
+   ```
+
+## Common Patterns
+
+### Create/Update Modal Hook Pattern
+
+```tsx
+const useEntityUpdateCreation = () => {
+  const { mutate: createEntity, isPending: isCreating } = useCreateEntityMutation();
+  const { mutate: updateEntity, isPending: isUpdating } = useUpdateEntityMutation();
+  const createOverlay = useCreateOverlay({ isCreating, isUpdating });
+
+  const openCreateEntityModal = useCallback(() => {
+    createOverlay({
+      component: ({ close, state: { isCreating } }) => (
+        <EntityFormModal
+          onClose={close}
+          onSubmit={(payload) =>
+            createEntity(payload, {
+              onSuccess: () => {
+                close();
+                invalidateEntityListQuery();
+              },
+            })
+          }
+          isLoading={isCreating}
+        />
+      ),
+    });
+  }, [createOverlay, createEntity]);
+
+  const openUpdateEntityModal = useCallback(
+    (initialValues: Entity) => {
+      createOverlay({
+        component: ({ close, state: { isUpdating } }) => (
+          <EntityFormModal
+            onClose={close}
+            initialValues={initialValues}
+            onSubmit={(payload) =>
+              updateEntity(
+                { id: initialValues.id, payload },
+                {
+                  onSuccess: () => {
+                    close();
+                    invalidateEntityListQuery();
+                  },
+                }
+              )
+            }
+            isLoading={isUpdating}
+          />
+        ),
+      });
+    },
+    [createOverlay, updateEntity]
+  );
+
+  return { openCreateEntityModal, openUpdateEntityModal };
+};
+```

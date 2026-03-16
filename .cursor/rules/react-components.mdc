@@ -1,0 +1,42 @@
+---
+description: React component patterns and conventions
+---
+
+# React Component Patterns
+
+## Component Structure
+- All components are functional React 18 components in TypeScript JSX
+- Prefer **Pure UI**: components in `_contents` and `components/` accept data via props
+- No data-fetching logic in presentational components
+- Pass `className` through `cn()` helper for conditional classes
+
+## Import Convention
+Always import from shared UI library or folder barrels – never deep-link files:
+
+```ts
+// ✅ Correct - Shared UI Components
+import { Card, PageWrapper, Dialog } from "@repo/multiverse-ui";
+import { Badge, Table, Avatar } from "@repo/multiverse-ui";
+import { Button, FormInput, DatePicker } from "@repo/multiverse-ui";
+
+// ✅ Correct - App-specific Components
+import { LoginForm, UserForm } from "app/login/_contents";
+import { useLoginMutation } from "app/login/_hooks";
+
+// ❌ Incorrect
+import Card from "@repo/multiverse-ui/src/components/containers/Card";
+```
+
+## Component Categories
+From `@repo/multiverse-ui`:
+- `containers/`: Layout wrappers, page chrome, dialogs, cards, modals
+- `informationals/`: Pure display (badges, stats, tables, avatars, tooltips)
+- `input_controls/`: Form inputs & controls (buttons, inputs, selectors, date pickers)
+- `navigationals/`: Navigation widgets (tabs, pagination, breadcrumbs, sidebar)
+
+## Styling Guidelines
+- Use Tailwind utility classes; avoid arbitrary values unless design tokens unavailable
+- CSS-in-JS not used; colocated `.css` files for complex selectors
+- Component-specific styles go in sibling `.css` file when inline length excessive
+
+Reference: [docs/ruleset.md](mdc:docs/ruleset.md)

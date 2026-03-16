@@ -1,0 +1,17 @@
+{
+  "name": "@repo/tailwindcss-config",
+  "version": "0.0.0",
+  "description": "tailwindcss configs",
+  "type": "module",
+  "exports": {
+    "./global.css": "./global.css"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "tailwindcss": "^4.1.7"
+  }
+}

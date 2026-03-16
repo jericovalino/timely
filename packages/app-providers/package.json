@@ -1,0 +1,27 @@
+{
+  "name": "@repo/app-providers",
+  "version": "0.0.0",
+  "type": "module",
+  "author": "",
+  "license": "MIT",
+  "description": "",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.77.1",
+    "@tanstack/react-query-devtools": "^5.77.1",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^7.6.1",
+    "react-toastify": "^11.0.5"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.77.1",
+    "@tanstack/react-query-devtools": "^5.77.1",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^7.6.1",
+    "react-toastify": "^11.0.5"
+  }
+}

@@ -1,0 +1,79 @@
+---
+description: Table and pagination patterns for data display
+---
+
+# Table & Pagination Patterns
+
+## Table Implementation
+```tsx
+<Table
+  isLoading={isLoading}
+  data={transformedData}
+>
+  {({ Column }) => (
+    <>
+      <Column name="name" label="Name" />
+      <Column 
+        name="status" 
+        label="Status" 
+        render={(row) => (
+          <Badge intent={MAP_STATUS_BADGE_INTENT[row.status]}>
+            {row.status}
+          </Badge>
+        )}
+      />
+      <Column 
+        name="amount" 
+        label="Amount" 
+        render={(row) => formatCurrency(row.amount)}
+      />
+      <Column 
+        name="id" 
+        label="Actions"
+        render={(row) => (
+          <Button size="sm" onClick={() => handleEdit(row)}>
+            Edit
+          </Button>
+        )}
+      />
+    </>
+  )}
+</Table>
+```
+
+## Pagination Pattern
+```tsx
+const [filter, setFilter] = useState({});
+
+<Pagination
+  data={data?.meta}
+  onChange={(page) => setFilter(prev => ({ ...prev, page }))}
+/>
+```
+
+## Badge Mapping Pattern
+```ts
+const MAP_STATUS_BADGE_INTENT = {
+  ACTIVE: "success",
+  INACTIVE: "default",
+  PENDING: "warning",
+  FAILED: "danger",
+} as const;
+```
+
+## Best Practices
+- Provide `data` already transformed for display
+- Use `isLoading` prop for loading states
+- Custom cell UI through `render` function
+- Keep `Pagination` directly below `Table`
+- Always enable `keepPreviousData` in queries for smooth transitions
+- Status/enum columns should map to `Badge` components
+- Currency formatting via `formatCurrency()` utility
+- Action buttons in dedicated `Column name="id"`
+
+## Query Integration
+```ts
+const { data, isLoading } = useEntityListQuery(filter);
+```
+
+Reference: [docs/ruleset.md](mdc:docs/ruleset.md)

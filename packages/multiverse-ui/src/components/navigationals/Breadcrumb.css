@@ -1,0 +1,13 @@
+@import "./../../../../tailwindcss-config/global.css";
+
+#breadcrumbs {
+  @apply flex flex-nowrap gap-2 items-center;
+}
+
+#breadcrumbs > .breadcrumb {
+  @apply relative text-subtle whitespace-nowrap overflow-auto;
+}
+
+#breadcrumbs > .breadcrumb:not(:first-child)::before {
+  content: "|";
+}

@@ -1,0 +1,23 @@
+{
+  "name": "@repo/hooks",
+  "version": "0.0.0",
+  "type": "module",
+  "author": "",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "license": "MIT",
+  "description": "",
+  "peerDependencies": {
+    "react": "^19.1.1",
+    "react-router-dom": "^7.6.1"
+  },
+  "devDependencies": {
+    "react": "^19.1.1",
+    "react-router-dom": "^7.6.1"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.90.16",
+    "react-filerobot-image-editor": "^4.9.1"
+  }
+}

@@ -1,0 +1,100 @@
+---
+description: Forms, styling, and Tailwind patterns
+---
+
+# Forms & Styling Patterns
+
+## Form Implementation with createForm
+```tsx
+const { forwardFormContext, TextInput, SelectInput, DatePicker, TextArea } = createForm({
+  zodSchema: entityFormSchema,
+});
+
+const EntityModal = forwardFormContext(
+  ({ onClose, onSubmit, isLoading, initialValues }, ctx) => {
+    return (
+      <Modal onClose={onClose} title="Add Entity">
+        <form onSubmit={ctx.handleSubmit(onSubmit)}>
+          <Stack>
+            <TextInput
+              name="name"
+              label="Entity Name"
+              placeholder="Enter name"
+            />
+            <SelectInput
+              name="status"
+              label="Status"
+              placeholder="Select status"
+              options={[
+                { label: "Active", value: "ACTIVE" },
+                { label: "Inactive", value: "INACTIVE" },
+              ]}
+            />
+            <DatePicker
+              name="start_date"
+              label="Start Date"
+            />
+            <TextArea
+              name="description"
+              label="Description"
+              placeholder="Enter description"
+            />
+          </Stack>
+          
+          <Stack horizontal gap={12} justify="end" className="mt-mds-24">
+            <Button intent="default" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" intent="primary" loading={isLoading}>
+              Save
+            </Button>
+          </Stack>
+        </form>
+      </Modal>
+    );
+  }
+);
+```
+
+## Form Components
+- `TextInput`: Basic text input with label and validation
+- `SelectInput`: Dropdown with options array
+- `DatePicker`: Date selection with proper formatting
+- `TextArea`: Multi-line text input
+- `RadioGroup`: Radio button groups for exclusive selection
+- `CheckBoxGroup`: Checkbox groups for multiple selection
+- `Switch`: Toggle switch for boolean values
+
+## Styling Guidelines
+- Use Tailwind utility classes; avoid arbitrary values
+- Read-only fields get `bg-gray-50` styling
+- Modal action buttons right-aligned in `Stack horizontal`
+- Primary buttons use `intent="primary"`
+- Destructive actions use `intent="danger"`
+- Form spacing with `Stack` component and `gap` props
+
+## Button Patterns
+```tsx
+// Primary action
+<Button intent="primary" loading={isLoading}>
+  Save Changes
+</Button>
+
+// Secondary action
+<Button intent="default" onClick={onCancel}>
+  Cancel
+</Button>
+
+// Destructive action
+<Button intent="danger" onClick={onDelete}>
+  Delete
+</Button>
+```
+
+## Layout Patterns
+- Use `Stack` for vertical layouts with consistent spacing
+- Use `Stack horizontal` for horizontal button groups
+- Use `justify="end"` for right-aligned actions
+- Use `gap={12}` for consistent spacing between elements
+
+Reference: [docs/ruleset.md](mdc:docs/ruleset.md)

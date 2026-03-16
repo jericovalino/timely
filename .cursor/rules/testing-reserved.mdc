@@ -1,0 +1,34 @@
+---
+description: Testing patterns and conventions (reserved for future implementation)
+---
+
+# Testing Patterns (Reserved)
+
+## Unit Testing
+- **Unit tests**: colocate `*.test.ts(x)` next to the file under test
+- Use React Testing Library + Jest
+- Maintain 80% coverage on hooks and utilities
+- Integrate `msw` for API mocking
+
+## E2E Testing
+- E2E tests (Cypress) live under `cypress/` root folder
+- Test critical user flows and integrations
+
+## Testing Strategy
+- Test hooks independently from components
+- Mock API calls using `msw` (Mock Service Worker)
+- Focus on user behavior rather than implementation details
+- Test error states and edge cases
+
+## Performance Testing
+- Use React `memo` or `useMemo` only after measuring with React DevTools
+- Always enable React Query's `keepPreviousData` for paginated lists
+
+## Future Implementation
+This section is reserved for future testing implementation. Current focus is on establishing consistent patterns for:
+- Component testing with React Testing Library
+- Hook testing with custom test utilities
+- API mocking strategies
+- E2E test organization
+
+Reference: [docs/ruleset.md](mdc:docs/ruleset.md)
