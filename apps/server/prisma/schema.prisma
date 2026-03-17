@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Department
+model Department {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  employees Employee[]
+}
+
+// WorkSchedule
+model WorkSchedule {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  startTime String   // "HH:MM"
+  endTime   String   // "HH:MM"
+  workDays  DayOfWeek[] // [MON, TUE, WED, THU, FRI]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  employees Employee[]
+}
+
+// Employee
+model Employee {
+  id             String       @id @default(cuid())
+  employeeNumber String       @unique
+  firstName      String
+  lastName       String
+  email          String?
+  phone          String?
+  position       String?
+  photoUrl       String?
+  isActive       Boolean      @default(true)
+  departmentId   String
+  department     Department   @relation(fields: [departmentId], references: [id])
+  scheduleId     String
+  schedule       WorkSchedule @relation(fields: [scheduleId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  attendanceLogs     AttendanceLog[]
+  attendanceRecords  AttendanceRecord[]
+}
+
+// AttendanceLog - raw, immutable scan events
+model AttendanceLog {
+  id         String   @id @default(cuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  date       DateTime @db.Date
+  scannedAt  DateTime
+  type       ScanType
+  createdAt  DateTime @default(now())
+}
+
+// AttendanceRecord - computed daily summary, editable by admin
+model AttendanceRecord {
+  id               String    @id @default(cuid())
+  employeeId       String
+  employee         Employee  @relation(fields: [employeeId], references: [id])
+  date             DateTime  @db.Date
+  timeIn           DateTime?
+  timeOut          DateTime?
+  isLate           Boolean   @default(false)
+  isUndertime      Boolean   @default(false)
+  lateMinutes      Int       @default(0)
+  undertimeMinutes Int       @default(0)
+  totalHoursWorked Float?
+  adminNote        String?
+  // Audit: track which admin last edited this record
+  lastEditedById   String?
+  lastEditedBy     User?     @relation(fields: [lastEditedById], references: [id])
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@unique([employeeId, date])
+}
+
+// User (admin accounts)
+model User {
+  id             String             @id @default(cuid())
+  email          String             @unique
+  hashedPassword String
+  name           String
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  editedRecords  AttendanceRecord[]
+}
+
+enum ScanType {
+  IN
+  OUT
+  IGNORED // Scanned within cooldown window — logged for audit but does not update AttendanceRecord
+}
+
+enum DayOfWeek {
+  MON
+  TUE
+  WED
+  THU
+  FRI
+  SAT
+  SUN
+}
