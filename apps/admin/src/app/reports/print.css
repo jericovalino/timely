@@ -1,0 +1,40 @@
+@media print {
+  /* Hide everything except the report content */
+  header,
+  nav,
+  aside,
+  .no-print,
+  button {
+    display: none !important;
+  }
+
+  /* Ensure tables don't break across pages badly */
+  table {
+    page-break-inside: avoid;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  /* Ensure full width */
+  body, .report-content {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Page margins */
+  @page {
+    margin: 1.5cm;
+  }
+}
