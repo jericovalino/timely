@@ -2,7 +2,7 @@
   "name": "timely",
   "private": true,
   "scripts": {
-    "build": "turbo run build",
+    "build": "turbo run build --filter=@repo/admin --filter=@repo/kiosk --filter=@repo/timely-server",
     "dev": "turbo run dev --filter=@repo/admin --filter=@repo/kiosk --filter=@repo/timely-server",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
