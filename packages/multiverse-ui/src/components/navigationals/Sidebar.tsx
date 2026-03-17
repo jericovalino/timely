@@ -111,7 +111,7 @@ const Sidebar = ({
     <Fragment>
       <aside
         className={cn(
-          "bottom-0 top-0 z-20 flex h-full w-[17.5rem] flex-shrink-0 flex-col divide-y border-r border-subtle bg-surface shadow-md",
+          "bottom-0 top-0 z-20 flex h-full w-[17.5rem] flex-shrink-0 flex-col divide-y border-r border-subtle bg-white/5 backdrop-blur-md shadow-md",
           "transition-transform ease-[cubic-bezier(0.47,1.64,0.41,0.8)] md:static md:translate-x-0",
           !showInMdAndBelow ? "-translate-x-full" : "",
         )}
@@ -144,7 +144,7 @@ const Sidebar = ({
             ))}
           </ul>
         </nav>
-        <div className="flex items-center p-6 bg-white">
+        <div className="flex items-center p-6 bg-white/5 backdrop-blur-md">
           <Avatar initials="SP" rounded variant="initials" size={32} />
           <div className="ml-3">
             <h6 className="text-xs font-bold leading-[0.875rem] text-brand">
