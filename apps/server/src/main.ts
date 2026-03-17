@@ -10,6 +10,8 @@ async function bootstrap() {
     origin: [
       'http://localhost:5174', // Admin portal
       'http://localhost:5175', // Kiosk portal
+      'https://timely-lake.vercel.app',
+      'https://timely-admin.vercel.app',
     ],
     credentials: true,
   });
