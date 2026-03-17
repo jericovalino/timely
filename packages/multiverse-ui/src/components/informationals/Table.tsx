@@ -419,7 +419,7 @@ const Table = <
                           key={`${rowKey}-${colKey}`}
                           className={cn("px-mds-16 py-mds-10", col.className)}
                         >
-                          <div className="flex h-full w-full flex-col justify-center">
+                          <div className="flex h-full w-full flex-col justify-center text-body leading-loose">
                             {typeof col.render === "function" ? (
                               col.render(row, i)
                             ) : (
