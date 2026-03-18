@@ -37,7 +37,7 @@ const Login = forwardFormContext((_, ctx) => {
         }}
       />
       <div className="relative w-full max-w-sm rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-8 shadow-2xl ring-1 ring-white/10">
-        <ColoredLogo className="w-40 mb-4" />
+        <ColoredLogo className="w-40 -m-4" />
         <form
           className="flex flex-col"
           onSubmit={ctx.handleSubmit((values) => {
