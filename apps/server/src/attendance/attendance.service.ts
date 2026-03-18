@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  CreateAttendanceDto,
   UpdateAttendanceDto,
   AttendanceQueryDto,
   AttendanceLogQueryDto,
@@ -180,6 +181,62 @@ export class AttendanceService {
     };
   }
 
+  async createAttendance(dto: CreateAttendanceDto, lastEditedById: string) {
+    const employee = await this.prisma.employee.findUnique({
+      where: { id: dto.employeeId },
+      include: { schedule: true },
+    });
+
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    const date = new Date(dto.date);
+    const dateUTC = new Date(
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+    );
+
+    const parseHHmm = (hhmm: string, baseDate: Date): Date => {
+      const [hours, minutes] = hhmm.split(':').map(Number);
+      const d = new Date(baseDate);
+      d.setUTCHours(hours, minutes, 0, 0);
+      return d;
+    };
+
+    const timeIn = dto.timeIn ? parseHHmm(dto.timeIn, dateUTC) : null;
+    const timeOut = dto.timeOut ? parseHHmm(dto.timeOut, dateUTC) : null;
+
+    const { isLate, lateMinutes } = timeIn
+      ? this.calculateTardiness(timeIn, employee.schedule)
+      : { isLate: false, lateMinutes: 0 };
+
+    const { isUndertime, undertimeMinutes, totalHoursWorked } =
+      timeOut
+        ? this.calculateUndertime(timeOut, timeIn, employee.schedule)
+        : { isUndertime: false, undertimeMinutes: 0, totalHoursWorked: null };
+
+    return this.prisma.attendanceRecord.create({
+      data: {
+        employeeId: employee.id,
+        date: dateUTC,
+        timeIn,
+        timeOut,
+        isLate,
+        lateMinutes,
+        isUndertime,
+        undertimeMinutes,
+        totalHoursWorked,
+        adminNote: dto.adminNote,
+        lastEditedById,
+      },
+      include: {
+        employee: {
+          include: { department: true },
+        },
+      },
+    });
+  }
+
   async getAttendanceList(query: AttendanceQueryDto) {
     const {
       page = 1,
@@ -261,8 +318,19 @@ export class AttendanceService {
       throw new NotFoundException('Attendance record not found');
     }
 
-    const timeIn = dto.timeIn ? new Date(dto.timeIn) : record.timeIn;
-    const timeOut = dto.timeOut ? new Date(dto.timeOut) : record.timeOut;
+    const parseHHmm = (hhmm: string, baseDate: Date): Date => {
+      const [hours, minutes] = hhmm.split(':').map(Number);
+      const d = new Date(baseDate);
+      d.setUTCHours(hours, minutes, 0, 0);
+      return d;
+    };
+
+    const timeIn = dto.timeIn
+      ? parseHHmm(dto.timeIn, record.date)
+      : record.timeIn;
+    const timeOut = dto.timeOut
+      ? parseHHmm(dto.timeOut, record.date)
+      : record.timeOut;
 
     const schedule = record.employee.schedule;
 

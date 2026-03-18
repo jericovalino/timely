@@ -15,6 +15,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../auth/types/auth-user.type';
 import {
   ScanDto,
+  CreateAttendanceDto,
   UpdateAttendanceDto,
   AttendanceQueryDto,
   AttendanceLogQueryDto,
@@ -29,6 +30,15 @@ export class AttendanceController {
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   async scan(@Body() dto: ScanDto) {
     return this.attendanceService.scan(dto.employeeNumber);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post()
+  async createAttendance(
+    @Body() dto: CreateAttendanceDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.attendanceService.createAttendance(dto, user.id);
   }
 
   @UseGuards(JwtAuthGuard)
