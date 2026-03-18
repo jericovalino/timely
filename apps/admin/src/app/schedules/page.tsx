@@ -33,7 +33,7 @@ const DAY_LABELS: Record<string, string> = {
   SUN: "Sun",
 };
 
-const { forwardFormContext, TextInput } = createForm({
+const { forwardFormContext, TextInput, TimeInput } = createForm({
   zodSchema: createScheduleSchema,
 });
 
@@ -79,16 +79,8 @@ const ScheduleFormContent = forwardFormContext(
           placeholder="e.g. Standard 8-5"
         />
         <div className="grid grid-cols-2 gap-4">
-          <TextInput
-            name="startTime"
-            label="Start Time (HH:MM)"
-            placeholder="08:00"
-          />
-          <TextInput
-            name="endTime"
-            label="End Time (HH:MM)"
-            placeholder="17:00"
-          />
+          <TimeInput name="startTime" label="Start Time" />
+          <TimeInput name="endTime" label="End Time" />
         </div>
         <div>
           <p className="mb-2 text-sm font-medium text-gray-700">Work Days</p>

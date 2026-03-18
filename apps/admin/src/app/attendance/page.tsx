@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router";
 import { z } from "zod";
-import { LuPencil, LuClipboardList } from "react-icons/lu";
+import { LuPencil, LuClipboardList, LuPlus } from "react-icons/lu";
 
 import {
   Table,
@@ -21,10 +21,12 @@ import { createForm } from "@repo/utilities";
 import {
   useAttendanceListQuery,
   useUpdateAttendanceMutation,
+  useCreateAttendanceMutation,
   useAttendanceLogListQuery,
 } from "./_hooks";
 import type { AttendanceRecord } from "./_hooks";
 import { useDepartmentListQuery } from "../departments/_hooks";
+import { useEmployeeListQuery } from "../employees/_hooks";
 
 // ─── Edit Attendance Form ────────────────────────────────────────────────────
 
@@ -36,7 +38,7 @@ const editAttendanceSchema = z.object({
 
 const {
   forwardFormContext: forwardEditForm,
-  TextInput: EditTextInput,
+  TimeInput: EditTimeInput,
   TextArea: EditTextArea,
 } = createForm({ zodSchema: editAttendanceSchema });
 
@@ -59,8 +61,8 @@ const EditAttendanceForm = forwardEditForm(
           );
         })}
       >
-        <EditTextInput name="timeIn" label="Time In" placeholder="HH:MM" />
-        <EditTextInput name="timeOut" label="Time Out" placeholder="HH:MM" />
+        <EditTimeInput name="timeIn" label="Time In" />
+        <EditTimeInput name="timeOut" label="Time Out" />
         <EditTextArea
           name="adminNote"
           label="Admin Note"
@@ -94,15 +96,107 @@ const EditAttendanceModal = ({ record, close }: EditAttendanceModalProps) => (
       record={record}
       close={close}
       defaultGeekValues={{
-        timeIn: record.timeIn ?? "",
-        timeOut: record.timeOut ?? "",
+        timeIn: toHHmm(record.timeIn),
+        timeOut: toHHmm(record.timeOut),
         adminNote: record.adminNote ?? "",
       }}
     />
   </Modal>
 );
 
+// ─── Create Attendance Form ───────────────────────────────────────────────────
+
+const createAttendanceSchema = z.object({
+  employeeId: z.string().min(1, "Employee is required"),
+  date: z.string().min(1, "Date is required"),
+  timeIn: z.string().optional(),
+  timeOut: z.string().optional(),
+  adminNote: z.string().optional(),
+});
+
+const {
+  forwardFormContext: forwardCreateForm,
+  SelectInput: CreateSelectInput,
+  DatePicker: CreateDatePicker,
+  TimeInput: CreateTimeInput,
+  TextArea: CreateTextArea,
+} = createForm({ zodSchema: createAttendanceSchema });
+
+type CreateAttendanceModalProps = {
+  close: () => void;
+};
+
+const CreateAttendanceForm = forwardCreateForm(
+  ({ close }: CreateAttendanceModalProps, ctx) => {
+    const createMutation = useCreateAttendanceMutation();
+    const { data: employeeData } = useEmployeeListQuery({ limit: 100 });
+
+    return (
+      <form
+        className="flex flex-col"
+        onSubmit={ctx.handleSubmit((values) => {
+          createMutation.mutate(
+            {
+              employeeId: values.employeeId,
+              date: values.date,
+              timeIn: values.timeIn || undefined,
+              timeOut: values.timeOut || undefined,
+              adminNote: values.adminNote || undefined,
+            },
+            { onSuccess: close },
+          );
+        })}
+      >
+        <CreateSelectInput
+          name="employeeId"
+          label="Employee"
+          options={
+            employeeData?.list.map((e) => ({
+              label: `${e.firstName} ${e.lastName} (${e.employeeNumber})`,
+              value: e.id,
+            })) ?? []
+          }
+        />
+        <CreateDatePicker name="date" label="Date" />
+        <CreateTimeInput name="timeIn" label="Time In" />
+        <CreateTimeInput name="timeOut" label="Time Out" />
+        <CreateTextArea
+          name="adminNote"
+          label="Admin Note"
+          placeholder="Optional note..."
+        />
+        <div className="flex justify-end gap-3">
+          <Button type="button" variant="ghost" onClick={close}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            intent="primary"
+            loading={createMutation.isPending}
+          >
+            Create Record
+          </Button>
+        </div>
+      </form>
+    );
+  },
+);
+
+const CreateAttendanceModal = ({ close }: CreateAttendanceModalProps) => (
+  <Modal onClose={close} title="Create Attendance Record">
+    <CreateAttendanceForm close={close} />
+  </Modal>
+);
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+const toHHmm = (isoOrHHmm: string | null): string => {
+  if (!isoOrHHmm) return "";
+  if (/^\d{2}:\d{2}$/.test(isoOrHHmm)) return isoOrHHmm;
+  const d = new Date(isoOrHHmm);
+  if (isNaN(d.getTime())) return "";
+  return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+};
 
 const formatTime = (value: string | null) => {
   if (!value) return "-";
@@ -152,6 +246,12 @@ const AttendanceList = () => {
     });
   };
 
+  const handleCreate = () => {
+    createOverlay({
+      component: ({ close }) => <CreateAttendanceModal close={close} />,
+    });
+  };
+
   return (
     <PageWrapper>
       <Stack gap={24} className="h-full">
@@ -165,6 +265,13 @@ const AttendanceList = () => {
               onClick={() => navigate("/attendance/logs")}
             >
               View Audit Log
+            </Button>,
+            <Button
+              leadingIcon={LuPlus}
+              intent="primary"
+              onClick={handleCreate}
+            >
+              Create Record
             </Button>,
           ]}
         />
