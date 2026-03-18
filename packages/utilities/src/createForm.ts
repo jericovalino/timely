@@ -17,6 +17,7 @@ import {
   YearPicker,
   PinInput,
   QuantityInput,
+  TimeInput,
 } from "@repo/multiverse-ui";
 
 const { createForm } = createInstance({
@@ -36,6 +37,7 @@ const { createForm } = createInstance({
   YearPicker,
   PinInput,
   QuantityInput,
+  TimeInput,
 });
 
 export default createForm;

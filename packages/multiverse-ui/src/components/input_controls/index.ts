@@ -16,5 +16,6 @@ export { default as RadioGroup } from "./RadioGroup";
 export { default as PinInput } from "./PinInput";
 export { default as FilterDateRange } from "./FilterDateRange";
 export { default as QuantityInput } from "./QuantityInput";
+export { default as TimeInput } from "./TimeInput";
 
 export { default as ModuleFilters } from "./ModuleFilters"; // !important: Must be the last to import/export
